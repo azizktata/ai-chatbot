@@ -1,9 +1,9 @@
-import Wrapper from "./components/Wrapper";
+import Chat from "./components/Chat";
 
 export default function Home() {
   return (
     <main>
-      <Wrapper />
+      <Chat />
     </main>
   );
 }
