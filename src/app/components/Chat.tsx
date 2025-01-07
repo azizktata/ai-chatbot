@@ -11,7 +11,9 @@ export const maxDuration = 30;
 export default function Chat() {
   const [conversation, setConversation] = React.useState<Message[]>([]);
   const [input, setInput] = React.useState<string>("");
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setUserPreferanceData((prevState) => ({
       ...prevState,
@@ -64,55 +66,70 @@ export default function Chat() {
       chatContainer.current?.scrollTo(0, scrollHeight + 200);
     }
   };
+  const [isStreaming, setIsStreaming] = React.useState(false);
 
   React.useEffect(() => {
     scroll();
   }, [conversation]);
   return (
-    <div className="p-6  min-h-screen flex items-center justify-center">
+    <div className="bg-[#0F172A] min-h-screen  flex items-center justify-center">
       {!showChat ? (
-        <div className="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="w-full  flex flex-col items-center p-6 text-white space-y-6">
+          <h2 className="text-lg font-semibold text-center mb-4">
+            Start your preferences setup
+          </h2>
+          <form onSubmit={handleSubmit} className="space-y-6 w-[400px]">
+            {/* Country */}
             <div>
               <label
-                htmlFor="county"
-                className="block text-sm font-medium text-gray-700"
+                htmlFor="country"
+                className="block text-sm font-medium text-orange-400 flex items-center gap-2"
               >
-                Country:
+                🌍 Country
               </label>
               <input
                 type="text"
-                id="county"
+                id="country"
                 name="county"
                 value={userPreferanceData.county}
                 onChange={handleInputChange}
-                placeholder="Enter your county"
-                className="mt-1 block w-full rounded-md  shadow-sm py-4 sm:text-sm"
+                placeholder="Enter your country"
+                className="mt-2  block w-full rounded-lg bg-gray-800 text-white border-0 shadow-md py-3 px-4 placeholder-gray-500 text-sm focus:ring-2 focus:ring-orange-400 focus:outline-none"
               />
             </div>
+
+            {/* Time */}
             <div>
               <label
                 htmlFor="time"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-pink-400 flex items-center gap-2"
               >
-                Time:
+                ⏳ Time (Season)
               </label>
-              <input
-                type="text"
+              <select
                 id="time"
                 name="time"
                 value={userPreferanceData.time}
                 onChange={handleInputChange}
-                placeholder="Enter time preference"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm py-4 sm:text-sm"
-              />
+                className="mt-2 block w-full rounded-lg bg-gray-800 text-white border-0 shadow-md py-3 px-4 placeholder-gray-500 text-sm focus:ring-2 focus:ring-pink-400 focus:outline-none"
+              >
+                <option value="" disabled>
+                  Select a season
+                </option>
+                <option value="Spring">Spring</option>
+                <option value="Summer">Summer</option>
+                <option value="Autumn">Autumn</option>
+                <option value="Winter">Winter</option>
+              </select>
             </div>
+
+            {/* Purpose */}
             <div>
               <label
                 htmlFor="purpose"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-yellow-400 flex items-center gap-2"
               >
-                Purpose:
+                🎯 Purpose
               </label>
               <input
                 type="text"
@@ -121,15 +138,17 @@ export default function Chat() {
                 value={userPreferanceData.purpose}
                 onChange={handleInputChange}
                 placeholder="Enter purpose"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm py-4 sm:text-sm"
+                className="mt-2 block w-full rounded-lg bg-gray-800 text-white border-0 shadow-md py-3 px-4 placeholder-gray-500 text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
               />
             </div>
+
+            {/* Budget */}
             <div>
               <label
                 htmlFor="budget"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-green-400 flex items-center gap-2"
               >
-                Budget:
+                💰 Budget
               </label>
               <input
                 type="text"
@@ -138,38 +157,53 @@ export default function Chat() {
                 value={userPreferanceData.budget}
                 onChange={handleInputChange}
                 placeholder="Enter your budget"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm py-4 sm:text-sm"
+                className="mt-2 block w-full rounded-lg bg-gray-800 text-white border-0 shadow-md py-3 px-4 placeholder-gray-500 text-sm focus:ring-2 focus:ring-green-400 focus:outline-none"
               />
             </div>
+
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white py-3 px-6 rounded-lg shadow-lg hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-400 focus:ring-offset-2"
             >
-              {loading ? "loading..." : "Start Chat"}
+              ⚡ {loading ? "Loading..." : "Submit Preferences"}
             </button>
           </form>
         </div>
       ) : (
         <>
-          <div className="w-full max-w-xl bg-white shadow-lg rounded-lg p-6 space-y-4">
-            <div ref={chatContainer} className="overflow-y-auto max-h-60">
+          <div className="w-full max-w-2xl bg-white shadow-lg rounded-lg p-6 space-y-4">
+            <div
+              ref={chatContainer}
+              className="overflow-y-auto h-[80vh] space-y-4 p-4 bg-gray-50"
+            >
               {conversation.map((message, index) => (
                 <div
                   key={index}
-                  className={`p-2 rounded-md ${
+                  className={`p-4 rounded-lg shadow-md space-y-2 ${
                     index % 2 === 0
-                      ? "bg-gray-200 text-gray-800 text-right"
-                      : "bg-indigo-100 text-indigo-900"
+                      ? "bg-black text-white rounded-lg p-4 text-right w-auto self-end"
+                      : "bg-gray-100 text-gray-900"
                   }`}
                 >
                   {index !== 0 ? (
                     <>
-                      <p className="mb-1 font-bold">{message.role}:</p>
                       <p className="leading-relaxed">
                         {message.content.split("\n").map((line, i) => (
                           <span key={i}>
-                            {line}
+                            {line.split(/(\*\*.*?\*\*)/g).map((part, j) => {
+                              // If the part is wrapped in **, render it as bold
+                              if (/^\*\*(.*?)\*\*$/.test(part)) {
+                                return (
+                                  <strong key={j} className="font-bold">
+                                    {part.replace(/\*\*/g, "")}
+                                  </strong>
+                                );
+                              }
+                              // Otherwise, render it as plain text
+                              return part;
+                            })}
                             <br />
                           </span>
                         ))}
@@ -179,17 +213,42 @@ export default function Chat() {
                 </div>
               ))}
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="relative flex items-center bg-gray-100 p-2 rounded-full shadow-sm">
+              {/* Attachment Icon */}
+              <button
+                type="button"
+                className="p-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 12.803V8.297a5.297 5.297 0 10-10.594 0v7.406a3.594 3.594 0 007.188 0V9.703a1.797 1.797 0 00-3.594 0v6.594"
+                  />
+                </svg>
+              </button>
+
+              {/* Input Field */}
               <input
                 type="text"
                 value={input}
-                onChange={(event) => {
-                  setInput(event.target.value);
-                }}
-                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                onChange={(event) => setInput(event.target.value)}
+                placeholder="Send a message..."
+                className="flex-1 bg-transparent outline-none px-4 text-sm text-gray-700 placeholder-gray-500"
               />
+
+              {/* Send Button */}
               <button
                 onClick={async () => {
+                  setInput("");
+                  setIsStreaming(true);
                   const { messages, newMessage } = await continueConversation([
                     ...conversation,
                     { role: "user", content: input },
@@ -205,10 +264,45 @@ export default function Chat() {
                       { role: "assistant", content: textContent },
                     ]);
                   }
+                  setIsStreaming(false);
                 }}
-                className="bg-indigo-600 text-white py-4 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                className="p-2 bg-gray-200 text-gray-500 rounded-full hover:bg-indigo-600 hover:text-white focus:outline-none"
               >
-                Send Message
+                {!isStreaming ? (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5.25 12h13.5m0 0l-6.75-6.75m6.75 6.75l-6.75 6.75"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <rect
+                      x="6"
+                      y="6"
+                      width="12"
+                      height="12"
+                      rx="2"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                  </svg>
+                )}
               </button>
             </div>
           </div>
