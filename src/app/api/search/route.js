@@ -11,11 +11,11 @@ export async function GET(req){
             { message: "Ask a question via the 'question' parameter." },
             { status: 400 }
           );
-    }
+    } 
     const query_embeded = await generateEmbedding(question);
     const result = await findNearestMatch(query_embeded);
-    const response = await getChatCompletion(result, question);
-    return NextResponse.json(response);
+    // const response = await getChatCompletion(result, question);
+    return NextResponse.json(result);
 
     
 }

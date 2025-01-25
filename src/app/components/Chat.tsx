@@ -30,9 +30,26 @@ export default function Chat() {
     budget: "",
   });
   const startChat = async () => {
+    const result = await fetch(
+      "/api/search?question=" +
+        "purpose: " +
+        userPreferanceData.purpose +
+        "budget: " +
+        userPreferanceData.budget +
+        "time: " +
+        userPreferanceData.time +
+        "country: " +
+        userPreferanceData.county
+    );
+
+    const packageTTA = await result.json();
+    console.log(packageTTA);
     const { messages, newMessage } = await continueConversation([
       ...conversation,
-      { role: "user", content: formulatePrompte(userPreferanceData) },
+      {
+        role: "user",
+        content: formulatePrompte(userPreferanceData, packageTTA),
+      },
     ]);
 
     let textContent = "";

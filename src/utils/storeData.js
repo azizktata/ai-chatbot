@@ -17,7 +17,7 @@ export async function store(input) {
             options: {
                 normalize: true ,
                 pooling: 'mean'
-            }
+            } 
           });
          return { 
             content: textChunk, 
