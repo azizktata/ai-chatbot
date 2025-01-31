@@ -55,7 +55,7 @@ export async function findNearestMatch(query_embeded) {
        const res = await supabase.rpc('match_documents',{
           query_embedding: query_embeded,
           match_threshold: 0.2,
-          match_count: 1
+          match_count: 2
        });
        return res.data[0] ? res.data[0].content : "";
 }

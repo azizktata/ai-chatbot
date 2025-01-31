@@ -4,6 +4,7 @@ import React, { FormEvent } from "react";
 import { formulatePrompte } from "@/utils/getPrompt";
 import { ChatCompletionStream } from "together-ai/lib/ChatCompletionStream.mjs";
 import Together from "together-ai";
+import Image from "next/image";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -100,16 +101,9 @@ export default function Chat() {
 
     setIsPending(true);
     const result = await fetch(
-      "/api/search?question=" +
-        "purpose: " +
-        userPreferanceData.purpose +
-        "budget: " +
-        userPreferanceData.budget +
-        "time: " +
-        userPreferanceData.time +
-        "country: " +
-        userPreferanceData.county
+      `/api/search?question=purpose:${userPreferanceData.purpose},budget=${userPreferanceData.budget},time=${userPreferanceData.time},country=${userPreferanceData.county}`
     );
+
     setPrompt("");
     const packageTTA = await result.json();
     const newPrompt = formulatePrompte(userPreferanceData, packageTTA);
@@ -279,34 +273,62 @@ export default function Chat() {
         </div>
       ) : (
         <>
-          <div
-            ref={chatContainer}
-            className="w-full max-w-2xl bg-white shadow-lg rounded-lg p-6 space-y-4"
-          >
-            <div className="overflow-y-auto h-[80vh] space-y-4 p-4 bg-gray-50">
-              {messages.map((message, i) => (
-                <p key={i}>
-                  {message.role}:{" "}
-                  {typeof message.content === "string" &&
-                    message.content.split("\n").map((line, i) => (
-                      <span key={i}>
-                        {line.split(/(\*\*.*?\*\*)/g).map((part, j) => {
-                          // If the part is wrapped in **, render it as bold
-                          if (/^\*\*(.*?)\*\*$/.test(part)) {
-                            return (
-                              <strong key={j} className="font-bold">
-                                {part.replace(/\*\*/g, "")}
-                              </strong>
-                            );
-                          }
-                          // Otherwise, render it as plain text
-                          return part;
-                        })}
-                        <br />
-                      </span>
-                    ))}
-                </p>
-              ))}
+          <div className="w-full max-w-2xl bg-white shadow-lg rounded-lg p-6 space-y-4">
+            <div
+              ref={chatContainer}
+              className="overflow-y-auto h-[80vh] space-y-4 p-4 bg-gray-50"
+            >
+              {messages.map((message, i) => {
+                const isUser = message.role === "user";
+                const randomLetter = message.role.charAt(0).toUpperCase();
+
+                return (
+                  <div
+                    key={i}
+                    className={`flex flex-col items-${
+                      isUser ? "end" : "start"
+                    } space-y-2`}
+                  >
+                    {/* Avatar on top */}
+                    {isUser ? (
+                      randomLetter
+                    ) : (
+                      <Image
+                        src="/NPO.PNG"
+                        alt="Avatar"
+                        width={48}
+                        height={48}
+                        className="w-10 h-10 rounded-full"
+                      />
+                    )}
+
+                    {/* Message bubble */}
+                    <div
+                      className={`max-w-xs md:max-w-md p-3 rounded-lg shadow ${
+                        isUser
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-200 text-gray-900"
+                      }`}
+                    >
+                      {/* Message Content with Bold Formatting */}
+                      {typeof message.content === "string" &&
+                        message.content.split("\n").map((line, i) => (
+                          <span key={i} className="block">
+                            {line.split(/(\*\*.*?\*\*)/g).map((part, j) =>
+                              /^\*\*(.*?)\*\*$/.test(part) ? (
+                                <strong key={j} className="font-bold">
+                                  {part.replace(/\*\*/g, "")}
+                                </strong>
+                              ) : (
+                                part
+                              )
+                            )}
+                          </span>
+                        ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             <div>
               <form

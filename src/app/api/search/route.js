@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import {findNearestMatch,generateEmbedding, getChatCompletion} from '../../../utils/storeData';
+import {findNearestMatch,generateEmbedding} from '../../../utils/storeData';
 
 
 export async function GET(req){
@@ -15,6 +15,7 @@ export async function GET(req){
     const query_embeded = await generateEmbedding(question);
     const result = await findNearestMatch(query_embeded);
     // const response = await getChatCompletion(result, question);
+    console.log(result);
     return NextResponse.json(result);
 
     

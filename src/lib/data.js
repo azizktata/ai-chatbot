@@ -12,16 +12,17 @@
 //   ];
 
 export const data = [
-  "Istanbul (February 2025): 7 days, 6 nights stay at Buyuk Sahinler - Laleli, starting from 2365 TND.",
-  "Marrakech - Essaouira - Rabat - Casablanca (February 2025): 7 days, 6 nights stay at Blue Sea les Printemps, starting from 2980 TND.",
-  "Kuala Lumpur & Bali (April 2025): 11 days, 9 nights stay at Impiana Klcc, starting from 7590 TND.",
-  "Djerba Circuit (May - September 2025): 5 days, 4 nights stay at Fiesta Djerba, starting from 1080 TND.",
-  "Southern Tunisia Circuit (January - May 2025): 4 days, 3 nights stay at Sun Palm Douz/Ras El Ain Tozeur, starting from 560 TND.",
-  "Southern Tunisia Circuit (January - May 2025): 4 days, 3 nights stay at Sun Palm/Magic Life Palm Beach Palace, starting from 630 TND.",
-  "Djerba Circuit (May - September 2025): 4 days, 3 nights stay at Fiesta Djerba, starting from 960 TND.",
-  "Southern Tunisia Circuit: 4 days, 3 nights stay at Sun Palm Douz 4* - El Mouradi Tozeur 4*, starting from 580 TND.",
-  "Djerba La Douce: 4 days, 3 nights stay at Hotel Sidi Mansour Resort & Spa, starting from 499 TND.",
-  "3000 Years of History... Tunisia: 5 days, 4 nights visiting Sidi Bou Said, Carthage, Kairouan, El Jem, Sousse, starting from 780 TND.",
+
+  "Agency: TTA - Djerba Circuit (May - September 2025): 5 days, 4 nights stay at Fiesta Djerba, starting from 1080 TND.",
+  "Agency: TTA - Southern Tunisia Circuit (January - May 2025): 4 days, 3 nights stay at Sun Palm Douz/Ras El Ain Tozeur, starting from 560 TND.",
+  "Agency: TTA - Southern Tunisia Circuit (January - May 2025): 4 days, 3 nights stay at Sun Palm/Magic Life Palm Beach Palace, starting from 630 TND.",
+  "Agency: TTA - Djerba La Douce: 4 days, 3 nights stay at Hotel Sidi Mansour Resort & Spa, starting from 499 TND.",
+  "Agency: TTA - 3000 Years of History... Tunisia: 5 days, 4 nights visiting Sidi Bou Said, Carthage, Kairouan, El Jem, Sousse, starting from 780 TND.",
+  "Agency: Traditours - Tunisia Discovery (October 5 - October 15, 2025): 10 days cultural tour visiting Carthage, Kairouan, and the Sahara, with meals and accommodations included.",
+  "Agency: Tunisie Booking - Sahara Adventure (March 15 - March 20, 2025): 6 days desert expedition covering Douz, Ksar Ghilane, and Matmata, with 4-star hotel stays",
+  "Agency: Dima Voyage - Grand Tour of Tunisia (April 10 - April 20, 2025): 11 days exploring Tunis, Sousse, and Tozeur, including accommodations and guided tours.",
+
+
 ]
 
 
