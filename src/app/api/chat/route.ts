@@ -1,60 +1,16 @@
-// import ollama from "ollama";
-// import { ollama } from 'ollama-ai-provider';
-// import { streamText } from "ai";
-// import { createStreamableValue } from "ai/rsc";
+// app/api/chat/route.ts
+import Together from "together-ai";
 
-// export async function POST(req: Request) {
-//   const { messages } = await req.json();
+const together = new Together({ apiKey: process.env.API_KEY });
 
-//   const stream = createStreamableValue();
-//   const model = ollama("mistral");
+export async function POST(request: Request) {
+  const { messages } = await request.json();
 
+  const res = await together.chat.completions.create({
+    model: "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    messages,
+    stream: true,
+  });
 
-
-
-//   (async () => {
-//     const { textStream } = await streamText({
-//       model: model,
-//       messages: messages,
-//     });
-
-//     for await (const text of textStream) {
-//       stream.update(text);
-//     }
-
-//     stream.done();
-//   })().then(() => {});
-  // const response = await openai.chat.completions.create({
-  //   model: "gpt-4o",
-  //   messages: [
-  //     ...messages,
-  //   ],
-  //   stream: true,
-  //   max_tokens: 1024,
-  // });
-
-
-  // return {
-
-  //   newMessage: stream.value,
-  // };
-  // const stream = AIStream(response);
-  // return new streamText.toDataStreamResponse(stream);
-
-      
-      // const openai = new OpenAI({
-      //   apiKey: process.env.OPENAI_API_KEY ,
-      // });
-      // const response = await openai.chat.completions.create({
-//     model: "gpt-4o-mini",
-//     messages: [
-//       {
-//         role: "system",
-//         content: "You are a helpful and expert travel guide.",
-//       },
-//       {
-//         role: "user",
-//         content: "Suggestions about visiting Madina in Saudi Arabia",
-//       },
-//     ],
-//   });
+  return new Response(res.toReadableStream());
+}

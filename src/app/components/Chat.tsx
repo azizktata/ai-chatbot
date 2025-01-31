@@ -1,16 +1,16 @@
 "use client";
 
-import React from "react";
-import { Message, continueConversation } from "../actions";
-import { readStreamableValue } from "ai/rsc";
+import React, { FormEvent } from "react";
 import { formulatePrompte } from "@/utils/getPrompt";
+import { ChatCompletionStream } from "together-ai/lib/ChatCompletionStream.mjs";
+import Together from "together-ai";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
 export default function Chat() {
-  const [conversation, setConversation] = React.useState<Message[]>([]);
-  const [input, setInput] = React.useState<string>("");
+  // const [conversation, setConversation] = React.useState<Message[]>([]);
+  // const [input, setInput] = React.useState<string>("");
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -22,55 +22,54 @@ export default function Chat() {
   };
   const [showChat, setShowChat] = React.useState(false);
   // const [initialText, setInitialText] = React.useState("");
-  const [loading, setloading] = React.useState(false);
   const [userPreferanceData, setUserPreferanceData] = React.useState({
     county: "",
     time: "",
     purpose: "",
     budget: "",
   });
-  const startChat = async () => {
-    const result = await fetch(
-      "/api/search?question=" +
-        "purpose: " +
-        userPreferanceData.purpose +
-        "budget: " +
-        userPreferanceData.budget +
-        "time: " +
-        userPreferanceData.time +
-        "country: " +
-        userPreferanceData.county
-    );
+  // const startChat = async () => {
+  //   const result = await fetch(
+  //     "/api/search?question=" +
+  //       "purpose: " +
+  //       userPreferanceData.purpose +
+  //       "budget: " +
+  //       userPreferanceData.budget +
+  //       "time: " +
+  //       userPreferanceData.time +
+  //       "country: " +
+  //       userPreferanceData.county
+  //   );
 
-    const packageTTA = await result.json();
-    console.log(packageTTA);
-    const { messages, newMessage } = await continueConversation([
-      ...conversation,
-      {
-        role: "user",
-        content: formulatePrompte(userPreferanceData, packageTTA),
-      },
-    ]);
+  //   const packageTTA = await result.json();
+  //   console.log(packageTTA);
+  //   const { messages, newMessage } = await continueConversation([
+  //     ...conversation,
+  //     {
+  //       role: "user",
+  //       content: formulatePrompte(userPreferanceData, packageTTA),
+  //     },
+  //   ]);
 
-    let textContent = "";
+  //   let textContent = "";
 
-    for await (const delta of readStreamableValue(newMessage)) {
-      textContent = `${textContent}${delta}`;
+  //   for await (const delta of readStreamableValue(newMessage)) {
+  //     textContent = `${textContent}${delta}`;
 
-      setConversation([
-        ...messages,
-        { role: "assistant", content: textContent },
-      ]);
-    }
-  };
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setloading(true);
-    setShowChat(true);
-    await startChat();
+  //     setConversation([
+  //       ...messages,
+  //       { role: "assistant", content: textContent },
+  //     ]);
+  //   }
+  // };
+  // const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   setloading(true);
+  //   setShowChat(true);
+  //   // await startChat();
 
-    console.log("Form submitted:", userPreferanceData);
-  };
+  //   console.log("Form submitted:", userPreferanceData);
+  // };
 
   const chatContainer = React.useRef<HTMLDivElement>(null);
 
@@ -83,11 +82,102 @@ export default function Chat() {
       chatContainer.current?.scrollTo(0, scrollHeight + 200);
     }
   };
-  const [isStreaming, setIsStreaming] = React.useState(false);
+  // const [isStreaming, setIsStreaming] = React.useState(false);
 
+  const [prompt, setPrompt] = React.useState("");
+  const [messages, setMessages] = React.useState<
+    Together.Chat.Completions.CompletionCreateParams.Message[]
+  >([]);
+  const [isPending, setIsPending] = React.useState(false);
   React.useEffect(() => {
     scroll();
-  }, [conversation]);
+  }, [messages]);
+
+  async function handleFormSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    //   setloading(true);
+    setShowChat(true);
+
+    setIsPending(true);
+    const result = await fetch(
+      "/api/search?question=" +
+        "purpose: " +
+        userPreferanceData.purpose +
+        "budget: " +
+        userPreferanceData.budget +
+        "time: " +
+        userPreferanceData.time +
+        "country: " +
+        userPreferanceData.county
+    );
+    setPrompt("");
+    const packageTTA = await result.json();
+    const newPrompt = formulatePrompte(userPreferanceData, packageTTA);
+
+    // setMessages((messages) => [
+    //   ...messages,
+    //   { role: "user", content: newPrompt },
+    // ]);
+
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        messages: [...messages, { role: "user", content: newPrompt }],
+      }),
+    });
+
+    if (!res.body) return;
+
+    ChatCompletionStream.fromReadableStream(res.body)
+      .on("content", (delta, content) => {
+        setMessages((messages) => {
+          const lastMessage = messages.at(-1);
+
+          if (lastMessage?.role !== "assistant") {
+            return [...messages, { role: "assistant", content }];
+          } else {
+            return [...messages.slice(0, -1), { ...lastMessage, content }];
+          }
+        });
+      })
+      .on("end", () => {
+        setIsPending(false);
+      });
+  }
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    //   setloading(true);
+    // setShowChat(true);
+    setPrompt("");
+    setIsPending(true);
+    setMessages((messages) => [...messages, { role: "user", content: prompt }]);
+
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        messages: [...messages, { role: "user", content: prompt }],
+      }),
+    });
+
+    if (!res.body) return;
+
+    ChatCompletionStream.fromReadableStream(res.body)
+      .on("content", (delta, content) => {
+        setMessages((messages) => {
+          const lastMessage = messages.at(-1);
+
+          if (lastMessage?.role !== "assistant") {
+            return [...messages, { role: "assistant", content }];
+          } else {
+            return [...messages.slice(0, -1), { ...lastMessage, content }];
+          }
+        });
+      })
+      .on("end", () => {
+        setIsPending(false);
+      });
+  }
+
   return (
     <div className="bg-[#0F172A] min-h-screen  flex items-center justify-center">
       {!showChat ? (
@@ -95,7 +185,7 @@ export default function Chat() {
           <h2 className="text-lg font-semibold text-center mb-4">
             Start your preferences setup
           </h2>
-          <form onSubmit={handleSubmit} className="space-y-6 w-[400px]">
+          <form onSubmit={handleFormSubmit} className="space-y-6 w-[400px]">
             {/* Country */}
             <div>
               <label
@@ -181,111 +271,59 @@ export default function Chat() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading}
               className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white py-3 px-6 rounded-lg shadow-lg hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-400 focus:ring-offset-2"
             >
-              ⚡ {loading ? "Loading..." : "Submit Preferences"}
+              ⚡ {"Submit Preferences"}
             </button>
           </form>
         </div>
       ) : (
         <>
-          <div className="w-full max-w-2xl bg-white shadow-lg rounded-lg p-6 space-y-4">
-            <div
-              ref={chatContainer}
-              className="overflow-y-auto h-[80vh] space-y-4 p-4 bg-gray-50"
-            >
-              {conversation.map((message, index) => (
-                <div
-                  key={index}
-                  className={`p-4 rounded-lg shadow-md space-y-2 ${
-                    index % 2 === 0
-                      ? "bg-black text-white rounded-lg p-4 text-right w-auto self-end"
-                      : "bg-gray-100 text-gray-900"
-                  }`}
-                >
-                  {index !== 0 ? (
-                    <>
-                      <p className="leading-relaxed">
-                        {message.content.split("\n").map((line, i) => (
-                          <span key={i}>
-                            {line.split(/(\*\*.*?\*\*)/g).map((part, j) => {
-                              // If the part is wrapped in **, render it as bold
-                              if (/^\*\*(.*?)\*\*$/.test(part)) {
-                                return (
-                                  <strong key={j} className="font-bold">
-                                    {part.replace(/\*\*/g, "")}
-                                  </strong>
-                                );
-                              }
-                              // Otherwise, render it as plain text
-                              return part;
-                            })}
-                            <br />
-                          </span>
-                        ))}
-                      </p>
-                    </>
-                  ) : null}
-                </div>
+          <div
+            ref={chatContainer}
+            className="w-full max-w-2xl bg-white shadow-lg rounded-lg p-6 space-y-4"
+          >
+            <div className="overflow-y-auto h-[80vh] space-y-4 p-4 bg-gray-50">
+              {messages.map((message, i) => (
+                <p key={i}>
+                  {message.role}:{" "}
+                  {typeof message.content === "string" &&
+                    message.content.split("\n").map((line, i) => (
+                      <span key={i}>
+                        {line.split(/(\*\*.*?\*\*)/g).map((part, j) => {
+                          // If the part is wrapped in **, render it as bold
+                          if (/^\*\*(.*?)\*\*$/.test(part)) {
+                            return (
+                              <strong key={j} className="font-bold">
+                                {part.replace(/\*\*/g, "")}
+                              </strong>
+                            );
+                          }
+                          // Otherwise, render it as plain text
+                          return part;
+                        })}
+                        <br />
+                      </span>
+                    ))}
+                </p>
               ))}
             </div>
-            <div className="relative flex items-center bg-gray-100 p-2 rounded-full shadow-sm">
-              {/* Attachment Icon */}
-              <button
-                type="button"
-                className="p-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+            <div>
+              <form
+                className="relative flex items-center bg-gray-100 p-2 rounded-full shadow-sm"
+                onSubmit={handleSubmit}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-5 h-5"
+                <input
+                  placeholder="Send a message"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  className="flex-1 bg-transparent outline-none px-4 text-sm text-gray-700 placeholder-gray-500"
+                />
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="p-2 bg-gray-200 text-gray-500 rounded-full hover:bg-indigo-600 hover:text-white focus:outline-none"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21 12.803V8.297a5.297 5.297 0 10-10.594 0v7.406a3.594 3.594 0 007.188 0V9.703a1.797 1.797 0 00-3.594 0v6.594"
-                  />
-                </svg>
-              </button>
-
-              {/* Input Field */}
-              <input
-                type="text"
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                placeholder="Send a message..."
-                className="flex-1 bg-transparent outline-none px-4 text-sm text-gray-700 placeholder-gray-500"
-              />
-
-              {/* Send Button */}
-              <button
-                onClick={async () => {
-                  setInput("");
-                  setIsStreaming(true);
-                  const { messages, newMessage } = await continueConversation([
-                    ...conversation,
-                    { role: "user", content: input },
-                  ]);
-
-                  let textContent = "";
-
-                  for await (const delta of readStreamableValue(newMessage)) {
-                    textContent = `${textContent}${delta}`;
-
-                    setConversation([
-                      ...messages,
-                      { role: "assistant", content: textContent },
-                    ]);
-                  }
-                  setIsStreaming(false);
-                }}
-                className="p-2 bg-gray-200 text-gray-500 rounded-full hover:bg-indigo-600 hover:text-white focus:outline-none"
-              >
-                {!isStreaming ? (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
@@ -300,27 +338,8 @@ export default function Chat() {
                       d="M5.25 12h13.5m0 0l-6.75-6.75m6.75 6.75l-6.75 6.75"
                     />
                   </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                    stroke="currentColor"
-                    className="w-5 h-5"
-                  >
-                    <rect
-                      x="6"
-                      y="6"
-                      width="12"
-                      height="12"
-                      rx="2"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                  </svg>
-                )}
-              </button>
+                </button>
+              </form>
             </div>
           </div>
         </>
