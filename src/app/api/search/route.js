@@ -15,7 +15,7 @@ export async function GET(req){
     const query_embeded = await generateEmbedding(question);
     const result = await findNearestMatch(query_embeded);
     // const response = await getChatCompletion(result, question);
-    console.log(result);
+    // console.log(result);
     return NextResponse.json(result);
 
     

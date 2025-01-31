@@ -1,7 +1,7 @@
 "use client";
 
 import React, { FormEvent } from "react";
-import { formulatePrompte } from "@/utils/getPrompt";
+import { defaultPrompte, formulatePrompte } from "@/utils/getPrompt";
 import { ChatCompletionStream } from "together-ai/lib/ChatCompletionStream.mjs";
 import Together from "together-ai";
 import Image from "next/image";
@@ -112,6 +112,46 @@ export default function Chat() {
     //   ...messages,
     //   { role: "user", content: newPrompt },
     // ]);
+
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        messages: [...messages, { role: "user", content: newPrompt }],
+      }),
+    });
+
+    if (!res.body) return;
+
+    ChatCompletionStream.fromReadableStream(res.body)
+      .on("content", (delta, content) => {
+        setMessages((messages) => {
+          const lastMessage = messages.at(-1);
+
+          if (lastMessage?.role !== "assistant") {
+            return [...messages, { role: "assistant", content }];
+          } else {
+            return [...messages.slice(0, -1), { ...lastMessage, content }];
+          }
+        });
+      })
+      .on("end", () => {
+        setIsPending(false);
+      });
+  }
+  async function handleSkipSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    //   setloading(true);
+    setShowChat(true);
+
+    setIsPending(true);
+
+    setPrompt("");
+    const newPrompt = defaultPrompte();
+
+    setMessages((messages) => [
+      ...messages,
+      { role: "user", content: newPrompt },
+    ]);
 
     const res = await fetch("/api/chat", {
       method: "POST",
@@ -269,62 +309,74 @@ export default function Chat() {
             >
               ⚡ {"Submit Preferences"}
             </button>
+            <button
+              onClick={() => handleSkipSubmit}
+              className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 px-6 rounded-lg shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-purple-400 focus:ring-offset-2"
+            >
+              🚀 {"Skip to chat room"}
+            </button>
           </form>
         </div>
       ) : (
         <>
-          <div className="w-full max-w-2xl bg-white shadow-lg rounded-lg p-6 space-y-4">
+          <div className="w-full max-w-3xl bg-white shadow-lg rounded-lg p-6 space-y-4">
             <div
               ref={chatContainer}
               className="overflow-y-auto h-[80vh] space-y-4 p-4 bg-gray-50"
             >
-              {messages.map((message, i) => {
+              {messages.map((message, index) => {
                 const isUser = message.role === "user";
-                const randomLetter = message.role.charAt(0).toUpperCase();
+                const avatarContent = isUser ? (
+                  <span className="flex items-center justify-center font-bold text-lg w-10 h-10 rounded-full bg-blue-500 text-white">
+                    {message.role.charAt(0).toUpperCase()}
+                  </span>
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+                    <Image
+                      src="/NPO.PNG"
+                      alt="Avatar"
+                      width={40}
+                      height={40}
+                      className="w-10 h-10 rounded-full"
+                    />
+                  </div>
+                );
 
                 return (
                   <div
-                    key={i}
-                    className={`flex flex-col items-${
-                      isUser ? "end" : "start"
-                    } space-y-2`}
+                    key={index}
+                    className={`flex ${
+                      isUser ? "justify-end" : "justify-start"
+                    } w-full`}
                   >
-                    {/* Avatar on top */}
-                    {isUser ? (
-                      randomLetter
-                    ) : (
-                      <Image
-                        src="/NPO.PNG"
-                        alt="Avatar"
-                        width={48}
-                        height={48}
-                        className="w-10 h-10 rounded-full"
-                      />
-                    )}
-
-                    {/* Message bubble */}
                     <div
-                      className={`max-w-xs md:max-w-md p-3 rounded-lg shadow ${
-                        isUser
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-200 text-gray-900"
-                      }`}
+                      className={`flex flex-col ${
+                        isUser ? "items-end" : "items-start"
+                      } space-y-2 max-w-xs md:max-w-md`}
                     >
-                      {/* Message Content with Bold Formatting */}
-                      {typeof message.content === "string" &&
-                        message.content.split("\n").map((line, i) => (
-                          <span key={i} className="block">
-                            {line.split(/(\*\*.*?\*\*)/g).map((part, j) =>
-                              /^\*\*(.*?)\*\*$/.test(part) ? (
-                                <strong key={j} className="font-bold">
-                                  {part.replace(/\*\*/g, "")}
-                                </strong>
-                              ) : (
-                                part
-                              )
-                            )}
-                          </span>
-                        ))}
+                      {avatarContent}
+                      <div
+                        className={`p-3 rounded-lg shadow-md ${
+                          isUser
+                            ? "bg-blue-500 text-white self-end"
+                            : "bg-gray-200 text-gray-900 self-start"
+                        }`}
+                      >
+                        {typeof message.content === "string" &&
+                          message.content.split("\n").map((line, i) => (
+                            <span key={i} className="block">
+                              {line.split(/(\*\*.*?\*\*)/g).map((part, j) =>
+                                /^\*\*(.*?)\*\*$/.test(part) ? (
+                                  <strong key={j} className="font-bold">
+                                    {part.replace(/\*\*/g, "")}
+                                  </strong>
+                                ) : (
+                                  part
+                                )
+                              )}
+                            </span>
+                          ))}
+                      </div>
                     </div>
                   </div>
                 );
@@ -341,6 +393,7 @@ export default function Chat() {
                   onChange={(e) => setPrompt(e.target.value)}
                   className="flex-1 bg-transparent outline-none px-4 text-sm text-gray-700 placeholder-gray-500"
                 />
+
                 <button
                   type="submit"
                   disabled={isPending}
